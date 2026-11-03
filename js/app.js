@@ -9,13 +9,13 @@
 
   // ---------------------------------------------------------------- actors
   const ACTORS = {
-    browser:  { name: 'React app',      sub: 'Browser',                pos: [-6.6, 0, 0.6],  shape: 'screen',   tone: '--c-data' },
-    api:      { name: 'Express API',    sub: 'Node.js',                pos: [0, 0, 0],       shape: 'server',   tone: '--accent' },
-    db:       { name: 'MongoDB',        sub: 'users · tokens',         pos: [6.6, 0, 0.6],   shape: 'db',       tone: '--c-ok' },
-    redis:    { name: 'Redis',          sub: 'limits · cache · queue', pos: [4.9, 0, -4.9],  shape: 'cache',    tone: '--c-cache' },
-    mail:     { name: 'Email service',  sub: 'SES · Resend · SMTP',    pos: [0.3, 0, -6.4],  shape: 'mail',     tone: '--c-mail' },
-    phone:    { name: 'Authenticator',  sub: 'user’s phone',           pos: [-5.4, 0, 5.4],  shape: 'phone',    tone: '--c-token' },
-    google:   { name: 'Google',         sub: 'OAuth 2.0 · OpenID',     pos: [-5.0, 0, -5.0], shape: 'idp',      tone: '--c-idp' },
+    browser:  { name: 'Browser',        sub: 'your React app',         pos: [-6.6, 0, 0.6],  shape: 'screen',   tone: '--c-data' },
+    api:      { name: 'Server',         sub: 'Express API',            pos: [0, 0, 0],       shape: 'server',   tone: '--accent' },
+    db:       { name: 'Database',       sub: 'MongoDB',                pos: [6.6, 0, 0.6],   shape: 'db',       tone: '--c-ok' },
+    redis:    { name: 'Redis',          sub: 'rate limits · challenges', pos: [4.9, 0, -4.9], shape: 'cache',   tone: '--c-cache' },
+    mail:     { name: 'Email',          sub: 'provider → inbox',       pos: [0.3, 0, -6.4],  shape: 'mail',     tone: '--c-mail' },
+    phone:    { name: 'Authenticator',  sub: 'passkey on a device',    pos: [-5.4, 0, 5.4],  shape: 'phone',    tone: '--c-token' },
+    site:     { name: 'evil.example',   sub: 'another website',        pos: [-5.0, 0, -5.0], shape: 'idp',      tone: '--c-idp' },
     attacker: { name: 'Attacker',       sub: 'untrusted network',      pos: [3.8, 0, 5.6],   shape: 'attacker', tone: '--c-attack' },
   };
   const KIND = {
@@ -74,7 +74,7 @@
 
     // floor
     const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(17, 72),
+      new THREE.PlaneGeometry(34, 34),
       painted(new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, transparent: true, opacity: 0.55 }), '--bg-2'),
     );
     floor.rotation.x = -Math.PI / 2;
@@ -124,17 +124,19 @@
       tex.redraw = () => {
         const g = c.getContext('2d');
         g.fillStyle = css('--surface-2'); g.fillRect(0, 0, 160, 290);
-        g.strokeStyle = css('--line'); g.lineWidth = 6;
-        g.beginPath(); g.arc(80, 112, 46, 0, Math.PI * 2); g.stroke();
-        g.strokeStyle = css('--c-token');
-        g.beginPath(); g.arc(80, 112, 46, -Math.PI / 2, Math.PI * 0.95); g.stroke();
+        // a fingerprint: concentric arcs, the passkey prompt
+        g.strokeStyle = css('--c-token'); g.lineWidth = 5; g.lineCap = 'round';
+        for (let r = 10; r <= 50; r += 10) {
+          g.beginPath(); g.arc(80, 120, r, Math.PI * 1.08, Math.PI * 1.92 + (r % 20 ? 0.35 : 0)); g.stroke();
+          g.beginPath(); g.arc(80, 120, r, Math.PI * 0.15, Math.PI * (r % 20 ? 0.62 : 0.8)); g.stroke();
+        }
         g.fillStyle = css('--fg');
-        g.font = '600 30px ui-monospace, Menlo, monospace';
+        g.font = '600 20px system-ui, sans-serif';
         g.textAlign = 'center';
-        g.fillText('482 913', 80, 214);
+        g.fillText('Use passkey', 80, 214);
         g.fillStyle = css('--muted');
         g.font = '500 15px system-ui, sans-serif';
-        g.fillText('your-app', 80, 246);
+        g.fillText('Touch to sign in', 80, 244);
         tex.needsUpdate = true;
       };
       tex.redraw();
@@ -197,9 +199,9 @@
     Object.entries(ACTORS).forEach(([key, def]) => {
       const root = new THREE.Group();
       root.position.set(...def.pos);
-      const ped = cyl(1.3, 1.5, 0.2, 48, nodeMat); ped.position.y = 0.1; root.add(ped);
+      const ped = box(2.7, 0.2, 2.7, nodeMat); ped.position.y = 0.1; root.add(ped);
       const ringMat = painted(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.35, side: THREE.DoubleSide }), def.tone);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(1.65, 1.76, 64), ringMat);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(2.05, 2.16, 4, 1, Math.PI / 4), ringMat);
       ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02; root.add(ring);
       const { group, spin } = buildShape(def.shape, def.tone);
       group.position.y = 0.2;
@@ -219,7 +221,7 @@
 
     // ---------------------------------------------------------- packet, trail, arcs, effects
     const packetMat = new THREE.MeshBasicMaterial();
-    const packet = new THREE.Mesh(new THREE.SphereGeometry(0.2, 24, 16), packetMat);
+    const packet = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), packetMat);
     const haloMat = new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, opacity: 0.9 });
     const halo = new THREE.Sprite(haloMat);
     halo.scale.setScalar(1.6);
@@ -260,8 +262,8 @@
 
     // process rings
     const procMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, side: THREE.DoubleSide });
-    const procRing = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.045, 10, 96), procMat);
-    const procRing2 = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.03, 8, 80), procMat);
+    const procRing = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.045, 6, 4), procMat);
+    const procRing2 = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.03, 6, 4), procMat);
     procRing.visible = procRing2.visible = false;
     scene.add(procRing, procRing2);
 
@@ -269,8 +271,8 @@
     const shieldMat = painted(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }), '--c-ok');
     const shieldEdgeMat = painted(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, side: THREE.DoubleSide }), '--c-ok');
     const shield = new THREE.Group();
-    shield.add(new THREE.Mesh(new THREE.CircleGeometry(1.05, 6), shieldMat));
-    shield.add(new THREE.Mesh(new THREE.RingGeometry(1.0, 1.1, 6), shieldEdgeMat));
+    shield.add(new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), shieldMat));
+    shield.add(new THREE.Mesh(new THREE.RingGeometry(1.27, 1.37, 4, 1, Math.PI / 4), shieldEdgeMat));
     shield.visible = false;
     scene.add(shield);
 
@@ -484,7 +486,7 @@
         const a = actors[s.at];
         procRing.visible = procRing2.visible = true;
         procRing.position.set(a.def.pos[0], 0.25, a.def.pos[2]);
-        procRing.rotation.set(Math.PI / 2, 0, 0);
+        procRing.rotation.set(Math.PI / 2, 0, Math.PI / 4);
         const pulse = (clock * 0.9) % 1;
         procRing.scale.setScalar(0.9 + pulse * 0.35);
         procMat.opacity = 0.9 * (1 - pulse) * (0.4 + 0.6 * ease(clamp(t * 1.5, 0, 1)));
@@ -511,6 +513,7 @@
         packet.position.copy(pos);
         if (t >= 1 && !blocked) packet.position.y += Math.sin(clock * 3) * 0.06;
         packet.scale.setScalar(1 + Math.sin(clock * 6) * 0.06);
+        packet.rotation.set(clock * 1.3, clock * 1.7, 0);
         trailHistory.unshift(pos.clone());
         if (trailHistory.length > TRAIL) trailHistory.length = TRAIL;
         if (t < 1) trailHistory.forEach((hp, i) => {
@@ -599,11 +602,23 @@
     $('ch-group').textContent = ch.group;
     $('ch-title').textContent = ch.title;
     $('ch-lede').textContent = ch.lede;
+    $('crumb').innerHTML = `<b>${ch.num}</b>${escapeHtml(ch.group)} / ${escapeHtml(ch.short || ch.title)}`;
     $('stage-badge-text').textContent = ch.flowName || 'Data flow';
 
     $('step-list').innerHTML = ch.steps.map((s, i) => `
       <li><button type="button" data-i="${i}" style="--k: ${kindVar(s.kind)}"><span class="n">${String(i + 1).padStart(2, '0')}</span><span><i class="k"></i>${escapeHtml(s.title)}</span></button></li>`).join('');
     $('progress').innerHTML = ch.steps.map((s, i) => `<button type="button" data-i="${i}" style="--k: ${kindVar(s.kind)}" aria-label="Step ${i + 1}: ${escapeHtml(s.title)}"></button>`).join('');
+
+    $('glance').innerHTML = (ch.glance || []).map(([value, label]) => `<div><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></div>`).join('');
+    $('glance').hidden = !(ch.glance && ch.glance.length);
+    $('source-line').innerHTML = (ch.sources || []).length
+      ? 'From Pilcrow’s Auth book: ' + ch.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.title)} ↗</a>`).join(' · ')
+      : '';
+
+    const an = ch.analogy || { title: '', intro: '', map: [] };
+    $('analogy-title').textContent = an.title;
+    $('analogy-intro').textContent = an.intro;
+    $('analogy-map').innerHTML = an.map.map(([real, like]) => `<li><span class="real">${escapeHtml(real)}</span><span class="like">${escapeHtml(like)}</span></li>`).join('');
 
     $('concept').innerHTML = ch.concept;
     $('threats').innerHTML = ch.threats.map((t) => `
@@ -613,8 +628,9 @@
         <div class="fix"><span class="lbl">Defense</span><p>${t.fix}</p></div>
       </article>`).join('');
 
+    $('code-block').hidden = !ch.code.length;
     $('code-tabs').innerHTML = ch.code.map((f, i) => `<button class="code-tab" role="tab" type="button" data-i="${i}" aria-selected="${i === 0}">${escapeHtml(f.file.split('/').pop())}</button>`).join('');
-    showCode(ch, 0);
+    if (ch.code.length) showCode(ch, 0);
 
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem('aim-check-' + ch.id) || '{}'); } catch (e) { saved = {}; }
@@ -689,6 +705,8 @@
     $('step-route').textContent = route;
     $('step-title').textContent = s.title;
     $('step-text').innerHTML = s.text;
+    $('analogy-step').textContent = s.analogy || '';
+    $('analogy-step').hidden = !s.analogy;
     const pl = $('step-payload');
     pl.hidden = !s.payload;
     pl.textContent = s.payload || '';
