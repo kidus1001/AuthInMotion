@@ -2,6 +2,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Auth in Motion</title>
+<script>
+  // Served at kidus.work/Auth-In-Motion: relative paths like js/app.js need a trailing slash
+  if (/\/Auth-In-Motion$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);
+</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="A 3D, step-by-step field guide to production authentication for MERN apps.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
