@@ -157,9 +157,10 @@ h1 {
 .actor-label small { font-size: 10.5px; color: var(--muted); }
 .actor-label .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--k); position: absolute; left: 7px; top: 9px; }
 .actor-label { padding-left: 20px; }
-.actor-label.is-off { opacity: 0; }
 .actor-label.is-active { border-color: var(--k); }
 .actor-label.is-dim { opacity: .55; }
+/* Actors not in this chapter: hidden, whatever else applies */
+.actor-label.is-off { opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; }
 
 .packet-label, .proc-chip {
   position: absolute; left: 0; top: 0; will-change: transform;
